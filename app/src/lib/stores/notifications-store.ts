@@ -18,6 +18,8 @@ import { AccountsStore } from './accounts-store'
 type OnChecksFailedCallback = (
   repository: RepositoryWithGitHubRepository,
   pullRequest: PullRequest,
+  commitMessage: string,
+  commitSha: string,
   checkRuns: ReadonlyArray<IRefCheck>
 ) => void
 
@@ -121,7 +123,13 @@ export class NotificationsStore {
 
     const checks = new Array<IRefCheck>()
 
-    if (statuses === null && checkRuns === null) {
+    if (statuses === null || checkRuns === null) {
+      return
+    }
+
+    const commit = await api.fetchCommit(owner.login, name, statuses.sha)
+
+    if (commit === null) {
       return
     }
 
@@ -143,7 +151,13 @@ export class NotificationsStore {
     }
 
     notification.on('click', () => {
-      this.onChecksFailedCallback?.(repository, pullRequest, check.checks)
+      this.onChecksFailedCallback?.(
+        repository,
+        pullRequest,
+        commit.commit.message,
+        commit.sha,
+        check.checks
+      )
     })
 
     notification.show()

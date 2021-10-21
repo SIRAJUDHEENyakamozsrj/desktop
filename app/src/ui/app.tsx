@@ -2059,6 +2059,8 @@ export class App extends React.Component<IAppProps, IAppState> {
             shouldChangeRepository={popup.needsSelectRepository}
             repository={popup.repository}
             pullRequest={popup.pullRequest}
+            commitMessage={popup.commitMessage}
+            commitSha={popup.commitSha}
             checks={popup.checks}
             accounts={this.state.accounts}
             onSubmit={onPopupDismissedFn}

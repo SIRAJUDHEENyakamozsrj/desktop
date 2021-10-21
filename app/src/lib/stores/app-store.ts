@@ -6756,22 +6756,28 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private onChecksFailedNotification = async (
     repository: RepositoryWithGitHubRepository,
     pullRequest: PullRequest,
+    commitMessage: string,
+    commitSha: string,
     checks: ReadonlyArray<IRefCheck>
   ) => {
     const selectedRepository =
       this.selectedRepository ?? (await this._selectRepository(repository))
 
+    const popup: Popup = {
+      type: PopupType.PullRequestChecksFailed,
+      pullRequest,
+      repository,
+      needsSelectRepository: true,
+      commitMessage,
+      commitSha,
+      checks,
+    }
+
     if (
       selectedRepository === null ||
       selectedRepository.hash !== repository.hash
     ) {
-      return this._showPopup({
-        type: PopupType.PullRequestChecksFailed,
-        pullRequest,
-        repository,
-        needsSelectRepository: true,
-        checks,
-      })
+      return this._showPopup(popup)
     }
 
     const state = this.repositoryStateCache.get(repository)
@@ -6787,11 +6793,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       // If there is no current branch or it's different than the PR branch,
       // show the checks failed dialog.
       this._showPopup({
-        type: PopupType.PullRequestChecksFailed,
-        pullRequest,
-        repository,
+        ...popup,
         needsSelectRepository: false,
-        checks,
       })
     }
   }

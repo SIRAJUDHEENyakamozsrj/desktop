@@ -14,6 +14,8 @@ import {
 import { CICheckRunLogs } from '../check-runs/ci-check-run-item-logs'
 import { Account } from '../../models/account'
 import { API } from '../../lib/api'
+import { Octicon } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 
 interface IPullRequestChecksFailedProps {
   readonly dispatcher: Dispatcher
@@ -21,13 +23,15 @@ interface IPullRequestChecksFailedProps {
   readonly accounts: ReadonlyArray<Account>
   readonly repository: RepositoryWithGitHubRepository
   readonly pullRequest: PullRequest
+  readonly commitMessage: string
+  readonly commitSha: string
   readonly checks: ReadonlyArray<IRefCheck>
   readonly onSubmit: () => void
   readonly onDismissed: () => void
 }
 
 interface IPullRequestChecksFailedState {
-  readonly loading: boolean
+  readonly switchingToPullRequest: boolean
   readonly selectedCheckID: number
   readonly checks: ReadonlyArray<IRefCheck>
   readonly loadingActionWorkflows: boolean
@@ -49,7 +53,7 @@ export class PullRequestChecksFailed extends React.Component<
     const selectedCheck =
       checks.find(check => check.conclusion === 'failure') ?? checks[0]
     this.state = {
-      loading: false,
+      switchingToPullRequest: false,
       selectedCheckID: selectedCheck.id,
       checks,
       loadingActionWorkflows: true,
@@ -76,6 +80,16 @@ export class PullRequestChecksFailed extends React.Component<
       check => check.id === this.state.selectedCheckID
     )
 
+    const failedChecks = this.state.checks.filter(
+      check => check.conclusion === 'failure'
+    )
+    const pluralize = failedChecks.length > 1 ? 'checks' : 'check'
+
+    const loading =
+      this.state.loadingActionWorkflows ||
+      this.state.loadingActionLogs ||
+      this.state.switchingToPullRequest
+
     return (
       <Dialog
         id="pull-request-checks-failed"
@@ -84,40 +98,46 @@ export class PullRequestChecksFailed extends React.Component<
         dismissable={false}
         onSubmit={this.props.onSubmit}
         onDismissed={this.props.onDismissed}
-        loading={this.state.loading}
+        loading={loading}
       >
         <DialogContent>
           <Row>
-            <span style={{ display: 'inline-block' }}>
-              Some checks failed in your pull request{' '}
-              <span style={{ fontWeight: 'bold' }}>
-                {this.props.pullRequest.title}
-              </span>{' '}
-              <span style={{ fontWeight: 'bold', color: 'rgb(87, 96, 106)' }}>
+            <span className="summary">
+              {failedChecks.length} {pluralize} failed in your pull request{' '}
+              <span className="pr-title">{this.props.pullRequest.title}</span>{' '}
+              <span className="pr-number">
                 #{this.props.pullRequest.pullRequestNumber}
               </span>
             </span>
           </Row>
           <Row>
-            <div className={'ci-check-run-dialog-container'}>
-              <CICheckRunList
-                checkRuns={this.state.checks}
-                loadingActionLogs={this.state.loadingActionLogs}
-                loadingActionWorkflows={this.state.loadingActionWorkflows}
-                showLogsInline={false}
-                selectable={true}
-                selectedCheckRun={selectedCheck}
-                onViewOnGitHub={this.onViewOnGitHub}
-                onCheckRunClick={this.onCheckRunClick}
-              />
-              {selectedCheck !== undefined && (
-                <CICheckRunLogs
-                  checkRun={selectedCheck}
+            <div className="ci-check-run-dialog-container">
+              <div className="ci-check-run-header">
+                <span className="message">{this.props.commitMessage}</span>
+                <span aria-hidden="true">
+                  <Octicon symbol={OcticonSymbol.gitCommit} />
+                </span>{' '}
+                <span className="sha">{this.props.commitSha.slice(0, 9)}</span>
+              </div>
+              <div className="ci-check-run-content">
+                <CICheckRunList
+                  checkRuns={this.state.checks}
                   loadingActionLogs={this.state.loadingActionLogs}
                   loadingActionWorkflows={this.state.loadingActionWorkflows}
+                  showLogsInline={false}
+                  selectable={true}
+                  selectedCheckRun={selectedCheck}
                   onViewOnGitHub={this.onViewOnGitHub}
+                  onCheckRunClick={this.onCheckRunClick}
                 />
-              )}
+                {selectedCheck !== undefined && (
+                  <CICheckRunLogs
+                    checkRun={selectedCheck}
+                    loadingActionLogs={this.state.loadingActionLogs}
+                    loadingActionWorkflows={this.state.loadingActionWorkflows}
+                  />
+                )}
+              </div>
             </div>
           </Row>
         </DialogContent>
@@ -225,10 +245,10 @@ export class PullRequestChecksFailed extends React.Component<
     event.preventDefault()
     const { dispatcher, repository, pullRequest } = this.props
 
-    this.setState({ loading: true })
+    this.setState({ switchingToPullRequest: true })
     await dispatcher.selectRepository(repository)
     await dispatcher.checkoutPullRequest(repository, pullRequest)
-    this.setState({ loading: false })
+    this.setState({ switchingToPullRequest: false })
 
     this.props.onDismissed()
   }

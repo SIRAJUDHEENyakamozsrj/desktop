@@ -30,13 +30,13 @@ interface ICICheckRunLogsProps {
   readonly loadingActionWorkflows: boolean
 
   /** Callback to opens check runs on GitHub */
-  readonly onViewOnGitHub: (checkRun: IRefCheck) => void
+  readonly onViewOnGitHub?: (checkRun: IRefCheck) => void
 }
 
 /** The CI check list item. */
 export class CICheckRunLogs extends React.PureComponent<ICICheckRunLogsProps> {
   private onViewOnGitHub = () => {
-    this.props.onViewOnGitHub(this.props.checkRun)
+    this.props.onViewOnGitHub?.(this.props.checkRun)
   }
 
   private isNoAdditionalInfoToDisplay(output: IRefCheckOutput): boolean {
@@ -142,6 +142,10 @@ export class CICheckRunLogs extends React.PureComponent<ICICheckRunLogsProps> {
   }
 
   private renderViewOnGitHub = () => {
+    if (this.props.onViewOnGitHub === undefined) {
+      return null
+    }
+
     return (
       <div className="view-on-github">
         <Button onClick={this.onViewOnGitHub}>View on GitHub</Button>

@@ -316,5 +316,7 @@ export type Popup =
       repository: RepositoryWithGitHubRepository
       pullRequest: PullRequest
       needsSelectRepository: boolean
+      commitMessage: string
+      commitSha: string
       checks: ReadonlyArray<IRefCheck>
     }
