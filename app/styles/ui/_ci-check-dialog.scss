@@ -1,13 +1,8 @@
 #pull-request-checks-failed {
-  .summary {
+  .custom-title {
     display: inline-block;
 
-    .pr-title {
-      font-weight: bold;
-    }
-
     .pr-number {
-      font-weight: bold;
       color: var(--text-secondary-color);
     }
   }
@@ -25,7 +20,7 @@
     .ci-check-run-header {
       display: flex;
       flex-direction: row;
-      justify-items: center;
+      align-items: center;
       padding: var(--spacing);
       border-bottom: var(--base-border);
 
@@ -41,6 +36,10 @@
 
       .sha {
         user-select: text;
+      }
+
+      .ci-check-rerun {
+        margin-left: auto;
       }
     }
 

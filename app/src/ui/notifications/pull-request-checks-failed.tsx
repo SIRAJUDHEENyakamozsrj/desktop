@@ -14,8 +14,9 @@ import {
 import { CICheckRunLogs } from '../check-runs/ci-check-run-item-logs'
 import { Account } from '../../models/account'
 import { API } from '../../lib/api'
-import { Octicon } from '../octicons'
+import { Octicon, syncClockwise } from '../octicons'
 import * as OcticonSymbol from '../octicons/octicons.generated'
+import { Button } from '../lib/button'
 
 interface IPullRequestChecksFailedProps {
   readonly dispatcher: Dispatcher
@@ -72,9 +73,14 @@ export class PullRequestChecksFailed extends React.Component<
         : 'Switch to repository and pull request'
     }
 
-    const dialogTitle = __DARWIN__
-      ? 'Pull Request Checks Failed'
-      : 'Pull request checks failed'
+    const dialogTitle = (
+      <span className="custom-title">
+        <span className="pr-title">{this.props.pullRequest.title}</span>{' '}
+        <span className="pr-number">
+          #{this.props.pullRequest.pullRequestNumber}
+        </span>{' '}
+      </span>
+    )
 
     const selectedCheck = this.state.checks.find(
       check => check.id === this.state.selectedCheckID
@@ -83,7 +89,8 @@ export class PullRequestChecksFailed extends React.Component<
     const failedChecks = this.state.checks.filter(
       check => check.conclusion === 'failure'
     )
-    const pluralize = failedChecks.length > 1 ? 'checks' : 'check'
+    const pluralChecks = failedChecks.length > 1 ? 'checks' : 'check'
+    const pluralThem = failedChecks.length > 1 ? 'them' : 'it'
 
     const loading =
       this.state.loadingActionWorkflows ||
@@ -103,11 +110,9 @@ export class PullRequestChecksFailed extends React.Component<
         <DialogContent>
           <Row>
             <span className="summary">
-              {failedChecks.length} {pluralize} failed in your pull request{' '}
-              <span className="pr-title">{this.props.pullRequest.title}</span>{' '}
-              <span className="pr-number">
-                #{this.props.pullRequest.pullRequestNumber}
-              </span>
+              {failedChecks.length} {pluralChecks} failed in your pull request.
+              Do you want to switch to that Pull Request now and start fixing{' '}
+              {pluralThem}?
             </span>
           </Row>
           <Row>
@@ -118,6 +123,7 @@ export class PullRequestChecksFailed extends React.Component<
                   <Octicon symbol={OcticonSymbol.gitCommit} />
                 </span>{' '}
                 <span className="sha">{this.props.commitSha.slice(0, 9)}</span>
+                {this.renderRerunButton()}
               </div>
               <div className="ci-check-run-content">
                 <CICheckRunList
@@ -155,6 +161,36 @@ export class PullRequestChecksFailed extends React.Component<
 
   public componentDidMount() {
     this.loadCheckRunLogs()
+  }
+
+  private renderRerunButton = () => {
+    const { checks } = this.state
+    return (
+      <div className="ci-check-rerun">
+        <Button onClick={this.rerunJobs} disabled={checks.length === 0}>
+          <Octicon symbol={syncClockwise} /> Re-run jobs
+        </Button>
+      </div>
+    )
+  }
+
+  private rerunJobs = () => {
+    // Get unique set of check suite ids
+    const checkSuiteIds = new Set<number | null>([
+      ...this.state.checks.map(cr => cr.checkSuiteId),
+    ])
+
+    for (const id of checkSuiteIds) {
+      if (id === null) {
+        continue
+      }
+      this.props.dispatcher.rerequestCheckSuite(
+        this.props.repository.gitHubRepository,
+        id
+      )
+    }
+
+    this.props.onDismissed()
   }
 
   private async loadCheckRunLogs() {
