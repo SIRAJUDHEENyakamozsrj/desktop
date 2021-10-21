@@ -51,6 +51,7 @@
       justify-content: stretch;
       overflow-x: hidden;
       overflow-y: hidden;
+      height: 100%;
     }
 
     .ci-check-run-list {
@@ -62,6 +63,7 @@
       box-shadow: none;
       border: none;
       border-left: var(--base-border);
+      border-right: none;
     }
     .ci-check-list-item-logs-output {
       max-height: none;
@@ -69,9 +71,8 @@
     }
     .loading-logs {
       box-shadow: none;
-      border: var(--base-border);
-      border-top: none;
-      border-bottom: none;
+      border: none;
+      border-left: var(--base-border);
       width: 70%;
     }
   }
