@@ -14,6 +14,7 @@ import {
   IRefCheck,
 } from '../ci-checks/ci-checks'
 import { AccountsStore } from './accounts-store'
+import { getCommit } from '../git'
 
 type OnChecksFailedCallback = (
   repository: RepositoryWithGitHubRepository,
@@ -127,10 +128,21 @@ export class NotificationsStore {
       return
     }
 
-    const commit = await api.fetchCommit(owner.login, name, statuses.sha)
+    let commitMessage: string
 
-    if (commit === null) {
-      return
+    // Try to get the commit message first from the repository and, if it's not
+    // there, then fall back to the API.
+    const commit = await getCommit(repository, statuses.sha)
+    if (commit !== null) {
+      commitMessage = commit.summary
+    } else {
+      const apiCommit = await api.fetchCommit(owner.login, name, statuses.sha)
+
+      if (apiCommit === null) {
+        return
+      }
+
+      commitMessage = apiCommit.commit.message
     }
 
     if (statuses !== null) {
@@ -154,8 +166,8 @@ export class NotificationsStore {
       this.onChecksFailedCallback?.(
         repository,
         pullRequest,
-        commit.commit.message,
-        commit.sha,
+        commitMessage,
+        statuses.sha,
         check.checks
       )
     })

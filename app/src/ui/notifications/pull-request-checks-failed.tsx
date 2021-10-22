@@ -118,7 +118,9 @@ export class PullRequestChecksFailed extends React.Component<
           <Row>
             <div className="ci-check-run-dialog-container">
               <div className="ci-check-run-header">
-                <span className="message">{this.props.commitMessage}</span>
+                <span className="message">
+                  {this.props.commitMessage.slice(0, 72)}
+                </span>
                 <span aria-hidden="true">
                   <Octicon symbol={OcticonSymbol.gitCommit} />
                 </span>{' '}
